@@ -143,7 +143,10 @@ module.exports = function(controller) {
 
     controller.on('slash_command', async(bot, message) => {
         let dialog = new SlackDialog('My Dialog', 'callback_123', 'Save');
-        dialog.addText('Your full name', 'name').addEmail('Your email', 'email');
+        dialog
+        .addText('Lesson number', 'name')
+        .addEmail('Issue description', 'description');
+        
         dialog.notifyOnCancel(true);
 
         await bot.replyWithDialog(message, dialog.asObject());
@@ -181,77 +184,34 @@ module.exports = function(controller) {
 
 
     controller.on('dialog_submission', async (bot, message) => {
-        const content = [{
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": `Hello, Assistant to the Regional Manager ${message.submission.name}! *Michael Scott* wants to know where you'd like to take the Paper Company investors to dinner tonight.\n\n *Please select a restaurant:*`
-            }
-        },
-        {
-            "type": "divider"
-        }]
-        await bot.reply(message, {
-            blocks:[
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": `You have a new request:\n*<fakeLink.toEmployeeProfile.com>| ${message.submission.name}*`
-                        }
-                    },
-                    {
-                        "type": "section",
-                        "fields": [
-                            {
-                                "type": "mrkdwn",
-                                "text": "*Type:*\nComputer (laptop)"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": "*When:*\nSubmitted Aut 10"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": "*Last Update:*\nMar 10, 2015 (3 years, 5 months)"
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": "*Reason:*\nAll vowel keys aren't working."
-                            },
-                            {
-                                "type": "mrkdwn",
-                                "text": "*Specs:*\n\"Cheetah Pro 15\" - Fast, really fast\""
-                            }
-                        ]
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "emoji": true,
-                                    "text": "Approve"
-                                },
-                                "style": "primary",
-                                "value": "click_me_123"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "emoji": true,
-                                    "text": "Deny"
-                                },
-                                "style": "danger",
-                                "value": "click_me_123"
-                            }
-                        ]
-                    }
-            ]
-        });
+
+        axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${process.env.REMOTE_SUPPORT_ID}&text=${message.submission.description}&icon_emoji=:apple:`)
+        .then(data => {
+            const message_id = data.data.ts
+            const channel = data.data.channel
+
+
+        // grab permalink of the post
+        axios.get(`https://slack.com/api/chat.getPermalink?token=${bot.api._accessToken}&channel=${channel}&message_ts=${message_id}`)
+        .then(data => {
+            axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${process.env.TA_QUEUE_ID}$text=${data.data.permalink}`)
+                .then(data => {
+                    bot.replyPrivate(message, 'Success')
+                })
+                .catch(err => {
+                    bot.replyPrivate(message, `Err:  ${err}`)
+                })
+            })
+        })
+        
+        
+       
+        
+        .catch(err => {
+             bot.replyPrivate(message, 'Error.')
+        })
+
+        
 
       
     });
