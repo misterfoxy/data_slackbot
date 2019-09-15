@@ -185,7 +185,9 @@ module.exports = function(controller) {
 
     controller.on('dialog_submission', async (bot, message) => {
 
-        axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${process.env.REMOTE_SUPPORT_ID}&text=${message.submission.description}&icon_emoji=:apple:`)
+        const messageText = `*Lesson:* ${message.submission.name}\n*Description:* ${message.submission.description}`
+
+        axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${process.env.REMOTE_SUPPORT_ID}&text=${messageText}&icon_emoji=:bar_chart:`)
         .then(data => {
             const message_id = data.data.ts
             const channel = data.data.channel
@@ -194,7 +196,32 @@ module.exports = function(controller) {
         // grab permalink of the post
         axios.get(`https://slack.com/api/chat.getPermalink?token=${bot.api._accessToken}&channel=${channel}&message_ts=${message_id}`)
         .then(data => {
-            axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${process.env.TA_QUEUE_ID}$text=${data.data.permalink}`)
+            axios.post(`https://hooks.slack.com/services/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`, {
+                blocks:[
+                    {
+                        "type": "section",
+                        "text": {
+                            "text": `<${data.data.permalink}|New Issue in Remote Support!>\n :bulb:`,
+                            "type": "mrkdwn"
+                        }
+                    },
+                    {
+                        "type": "actions",
+                        "elements": [
+                            
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Claim",
+                                    "emoji": true
+                                },
+                                "value": "click_me_123"
+                            }
+                        ]
+                    }
+                ]
+            })
                 .then(data => {
                     bot.replyPrivate(message, 'Success')
                 })
