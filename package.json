@@ -9,11 +9,13 @@
   },
   "dependencies": {
     "axios": "^0.19.0",
+    "bluebird": "^3.5.5",
     "botbuilder-adapter-slack": "^1.0.4",
     "botbuilder-storage-mongodb": "^0.9.5",
     "botkit": "^4.5.0",
     "botkit-plugin-cms": "^1.0.2",
     "dotenv": "^7.0.0",
-    "nodemon": "^1.19.2"
+    "nodemon": "^1.19.2",
+    "pg-promise": "^9.1.4"
   }
 }
