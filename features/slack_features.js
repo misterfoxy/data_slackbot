@@ -204,7 +204,7 @@ module.exports = function(controller) {
             // grab permalink of the post
             axios.get(`https://slack.com/api/chat.getPermalink?token=${bot.api._accessToken}&channel=${channel}&message_ts=${message_id}`)
             .then(data => {
-                axios.post(`https://hooks.slack.com/services/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`, {
+                axios.post(process.env.TA_QUEUE_WEBHOOK, {
                     blocks:[
                         {
                             "type": "section",
@@ -243,11 +243,6 @@ module.exports = function(controller) {
             bot.replyPrivate(message, 'Error with db submission')
         })
         
-            
-            
-           
-            
-           
         })
         .catch(err => {
             bot.replyPrivate(message, 'Error with db submission')
