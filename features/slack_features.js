@@ -194,11 +194,11 @@ module.exports = function(controller) {
             .then(async(data) => {
                 const message_id = data.data.ts
                 const channel = data.data.channel
-    
-    
+
                 const res = await axios.get(`https://slack.com/api/users.info?token=${bot.api._accessToken}&user=${message.user}`)
-                const user = await res.data.data.user.real_name
-            // grab permalink of the post
+                const user = await res.data.user.real_name
+
+                // grab permalink of the post
                 const response = await axios.get(`https://slack.com/api/chat.getPermalink?token=${bot.api._accessToken}&channel=${channel}&message_ts=${message_id}`)
                 const permalink = await response.data.permalink
                 axios.post(process.env.TA_QUEUE_WEBHOOK, {
