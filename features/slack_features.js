@@ -145,8 +145,8 @@ module.exports = function(controller) {
     controller.on('slash_command', async(bot, message) => {
         let dialog = new SlackDialog('My Dialog', 'callback_123', 'Save');
         dialog
-        .addText('Lesson number', 'name')
-        .addEmail('Issue description', 'description');
+          .addText('Lesson number', 'name')
+          .addEmail('Issue description', 'description');
         
         dialog.notifyOnCancel(true);
 
@@ -183,30 +183,31 @@ module.exports = function(controller) {
     //     }
     // });
 
-
     controller.on('dialog_submission', async (bot, message) => {
-        insertNewIssue(message.user, message.submission.name, message.submission.description, Date.now())
+        let usersn = message.incoming_message.channelData.user.name;
+        let lesson = message.submission.name;
+        let description = message.submission.description;
+        insertNewIssue(message.user, lesson, description, Date.now())
         .then(data => {
      
-            const messageText = `*Lesson:* ${message.submission.name}\n*Description:* ${message.submission.description}`
+            const messageText = `*Lesson:* ${lesson}\n*Description:* ${description}\n*User:* ${usersn}`
 
             axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${process.env.REMOTE_SUPPORT_ID}&text=${messageText}&icon_emoji=:bar_chart:`)
             .then(async(data) => {
                 const message_id = data.data.ts
                 const channel = data.data.channel
-
+    
                 const res = await axios.get(`https://slack.com/api/users.info?token=${bot.api._accessToken}&user=${message.user}`)
-                const user = await res.data.user.real_name
-
+                const user = res.data.user.real_name;
                 // grab permalink of the post
-                const response = await axios.get(`https://slack.com/api/chat.getPermalink?token=${bot.api._accessToken}&channel=${channel}&message_ts=${message_id}`)
-                const permalink = await response.data.permalink
+                const response = await axios.get(`https://slack.com/api/chat.getPermalink?token=${bot.api._accessToken}&channel=${channel}&message_ts=${message_id}`);
+                const permalink = response.data.permalink;
                 axios.post(process.env.TA_QUEUE_WEBHOOK, {
                     blocks:[
                         {
                             "type": "section",
                             "text": {
-                                "text": `<${permalink}|New Issue in Remote Support from ${user}!>\n :bulb:`,
+                                "text": `<${permalink}|New Issue in Remote Support from ${user} about Lesson: ${lesson}!>\n :bulb:`,
                                 "type": "mrkdwn"
                             }
                         }
@@ -216,22 +217,19 @@ module.exports = function(controller) {
                     bot.replyPrivate(message, 'Success')
                 })
                 .catch(err => {
-                    bot.replyPrivate(message, `Err:  ${err}`)
+                    bot.replyPrivate(message, `Err: ${err}`)
                 })
             })
             .catch(err => {
-                bot.replyPrivate(message, `Err: ${err}`)
+                bot.replyPrivate(message, `Remote Support Post Err: ${err}`)
             })
         })
         .catch(err => {
-            bot.replyPrivate(message, 'Error with db submission')
+            bot.replyPrivate(message, `db submission ${err}`);
         })
-        
-
     });
 
     // controller.on('dialog_cancellation', async (bot, message) => {
-    //     await bot.replyPrivate(message, '');
+    //     await bot.replyPrivate(message, 'dialog cancelled');
     // });
-
 }
