@@ -143,7 +143,7 @@ module.exports = function(controller) {
     // });
 
     controller.on('slash_command', async(bot, message) => {
-        let dialog = new SlackDialog('My Dialog', 'callback_123', 'Save');
+        let dialog = new SlackDialog('New TA Issue', 'callback_123', 'Save');
         dialog
           .addText('Lesson number', 'name')
           .addEmail('Issue description', 'description');
@@ -206,9 +206,21 @@ module.exports = function(controller) {
                         {
                             "type": "section",
                             "text": {
-                                "text": `<${permalink}|New Issue in Remote Support from ${user} about Lesson: ${lesson}!>\n :bulb:`,
+                                "text": `:bulb: <${permalink}|New Issue in Remote Support!>:bulb:\n*Lesson: ${lesson}*\n*Posted by ${user}* `,
                                 "type": "mrkdwn"
                             }
+                        },
+                        {
+                            "type": "divider"
+                        },
+                        {
+                            "type": "context",
+                            "elements": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": `Description: ${description}`
+                                }
+                            ]
                         }
                     ]
                 })
