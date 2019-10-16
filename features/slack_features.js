@@ -184,21 +184,20 @@ module.exports = function(controller) {
     // });
 
     controller.on('dialog_submission', async (bot, message) => {
-        let usersn = message.incoming_message.channelData.user.name;
         let lesson = message.submission.name;
         let description = message.submission.description;
         insertNewIssue(message.user, lesson, description, Date.now())
-        .then(data => {
-     
-            const messageText = `*Lesson:* ${lesson}\n*Description:* ${description}\n*User:* ${usersn}`
+        .then(async(msgdata) => {
+            const res = await axios.get(`https://slack.com/api/users.info?token=${bot.api._accessToken}&user=${message.user}`)
+            const user = res.data.user.real_name;
+    
+            const messageText = `*Lesson:* ${lesson}\n*Description:* ${description}\n*User:* ${user}`
 
             axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${process.env.REMOTE_SUPPORT_ID}&text=${messageText}&icon_emoji=:bar_chart:`)
             .then(async(data) => {
                 const message_id = data.data.ts
                 const channel = data.data.channel
     
-                const res = await axios.get(`https://slack.com/api/users.info?token=${bot.api._accessToken}&user=${message.user}`)
-                const user = res.data.user.real_name;
                 // grab permalink of the post
                 const response = await axios.get(`https://slack.com/api/chat.getPermalink?token=${bot.api._accessToken}&channel=${channel}&message_ts=${message_id}`);
                 const permalink = response.data.permalink;
