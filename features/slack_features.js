@@ -2,6 +2,8 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License.
  */
+
+// slackbot feature configuration
 const { SlackDialog } = require('botbuilder-adapter-slack');
 const axios = require('axios');
 const {insertNewIssue} = require('../db/actions')
@@ -37,16 +39,16 @@ module.exports = function(controller) {
     //     await bot.reply(message, `You mentioned me when you said "${ message.text }"`);
     // });
 
-    controller.hears('ephemeral', 'message,direct_message', async(bot, message) => {
-        await bot.replyEphemeral(message,'This is an ephemeral reply sent using bot.replyEphemeral()!');
-    });
+    // controller.hears('ephemeral', 'message,direct_message', async(bot, message) => {
+    //     await bot.replyEphemeral(message,'This is an ephemeral reply sent using bot.replyEphemeral()!');
+    // });
 
-    controller.hears('threaded', 'message,direct_message', async(bot, message) => {
-        await bot.replyInThread(message,'This is a reply in a thread!');
+    // controller.hears('threaded', 'message,direct_message', async(bot, message) => {
+    //     await bot.replyInThread(message,'This is a reply in a thread!');
 
-        await bot.startConversationInThread(message.channel, message.user, message.incoming_message.channelData.ts);
-        await bot.say('And this should also be in that thread!');
-    });
+    //     await bot.startConversationInThread(message.channel, message.user, message.incoming_message.channelData.ts);
+    //     await bot.say('And this should also be in that thread!');
+    // });
 
     // controller.hears('blocks', 'message', async(bot, message) => {
 
@@ -142,6 +144,7 @@ module.exports = function(controller) {
     //     await bot.reply(message, `Sounds like your choice is ${ message.incoming_message.channelData.actions[0].value }`)
     // });
 
+
     controller.on('slash_command', async(bot, message) => {
         let dialog = new SlackDialog('New TA Issue', 'callback_123', 'Save');
         dialog
@@ -186,14 +189,38 @@ module.exports = function(controller) {
     controller.on('dialog_submission', async (bot, message) => {
         let lesson = message.submission.name;
         let description = message.submission.description;
+
+        // insert issue into psql db
         insertNewIssue(message.user, lesson, description, Date.now())
         .then(async(msgdata) => {
+            // fetch user data based on dialog submission info
             const res = await axios.get(`https://slack.com/api/users.info?token=${bot.api._accessToken}&user=${message.user}`)
             const user = res.data.user.real_name;
     
             const messageText = `*Lesson:* ${lesson}\n*Description:* ${description}\n*User:* ${user}`
+            
+            let res2 = await axios.get(`https://slack.com/api/conversations.list?token=${bot.api._accessToken}`)
 
-            axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${process.env.REMOTE_SUPPORT_ID}&text=${messageText}&icon_emoji=:bar_chart:`)
+            let conversationList = res2.data.channels
+
+            const frontOfficeChannel = conversationList.filter(conversation => {
+                return conversation.name === 'student-queue'
+            })
+
+         
+            // establish front and back office objects for seperate posts
+            let frontOffice = {
+                id: frontOfficeChannel[0].id
+
+            }
+
+    
+            
+
+
+            // create a post in the remote-support channel
+            axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${frontOffice.id}&text=${messageText}`, {
+            })
             .then(async(data) => {
                 const message_id = data.data.ts
                 const channel = data.data.channel
@@ -201,29 +228,21 @@ module.exports = function(controller) {
                 // grab permalink of the post
                 const response = await axios.get(`https://slack.com/api/chat.getPermalink?token=${bot.api._accessToken}&channel=${channel}&message_ts=${message_id}`);
                 const permalink = response.data.permalink;
-                axios.post(process.env.TA_QUEUE_WEBHOOK, {
-                    blocks:[
-                        {
-                            "type": "section",
-                            "text": {
-                                "text": `:bulb: <${permalink}|New Issue in Remote Support!>:bulb:\n*Lesson: ${lesson}*\n*Posted by ${user}* `,
-                                "type": "mrkdwn"
-                            }
-                        },
-                        {
-                            "type": "divider"
-                        },
-                        {
-                            "type": "context",
-                            "elements": [
-                                {
-                                    "type": "mrkdwn",
-                                    "text": `Description: ${description}`
-                                }
-                            ]
-                        }
-                    ]
+
+                // grab channel id of ta-queue after getting permalink
+                let res2 = await axios.get(`https://slack.com/api/conversations.list?token=${bot.api._accessToken}`)
+
+                let conversationList = res2.data.channels
+
+                const backOfficeChannel = conversationList.filter(conversation => {
+                    return conversation.name === 'ta-queue'
                 })
+    
+                let backOffice  = {
+                    id: backOfficeChannel[0].id
+                }
+
+                axios.post(`https://slack.com/api/chat.postMessage?token=${bot.api._accessToken}&channel=${backOffice.id}&text=:bulb: <${permalink}|New Issue in Student Queue!>:bulb:\n*Lesson: ${lesson}*\n*Posted by ${user}* \n Description: ${description} `)
                 .then(data => {
                     bot.replyPrivate(message, 'Success')
                 })

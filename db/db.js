@@ -1,3 +1,5 @@
+// psql db configuration for issue collection
+
 const promise = require('bluebird');
 
 const options = {

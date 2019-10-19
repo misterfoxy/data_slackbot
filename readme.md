@@ -1,4 +1,11 @@
-# Botkit Starter Kit
+# Data SlackBot
+A slackbot used to create a queue for virtual TAs in a Slack Workspace.
+
+## Contributors
+- misterfoxy
+- jvillama
+
+### Botkit Starter Kit
 
 This is a Botkit starter kit for slack, created with the [Yeoman generator](https://github.com/howdyai/botkit/tree/master/packages/generator-botkit#readme).
 
