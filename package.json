@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "bluebird": "^3.5.5",
     "botbuilder-adapter-slack": "^1.0.4",
     "botbuilder-storage-mongodb": "^0.9.5",
